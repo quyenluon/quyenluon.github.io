@@ -1,7 +1,12 @@
-<?php
-require_once 'config/config.php';
-require_once 'vendor/Bootstrap.php';
-require_once 'vendor/Controller.php';
-session_start();
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+<body>
 
-$x = new Bootstrap();
+<a style color="3f3">NKT</a>•<a style color="f3f">Holi</a>
+
+</body>
+</html>
+
