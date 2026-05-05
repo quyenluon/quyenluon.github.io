@@ -3,33 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tạo 64 Số Ngẫu Nhiên</title>
+    <title>Tạo 64 Số Ngẫu Nhiên Không Trùng</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         h2 { color: #1c1e21; margin-bottom: 10px; }
-        .controls { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 90%; max-width: 800px; text-align: center; margin-bottom: 20px; position: relative; }
-        
+        .controls { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 90%; max-width: 800px; text-align: center; margin-bottom: 20px; }
         .btn-group { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; }
         button { padding: 12px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.3s; }
-        
         .btn-generate { background-color: #28a745; color: white; }
         .btn-generate:hover { background-color: #218838; }
-        
         .btn-copy { background-color: #007bff; color: white; }
         .btn-copy:hover { background-color: #0056b3; }
-
         textarea { width: 100%; height: 100px; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 15px; resize: none; box-sizing: border-box; background-color: #fafafa; }
-        
-        .copy-label { display: block; text-align: left; margin-bottom: 8px; font-weight: bold; color: #555; font-size: 14px; }
-        
+        .copy-label { display: block; text-align: left; margin-bottom: 8px; font-weight: bold; color: #555; }
         table { border-collapse: collapse; width: 90%; max-width: 800px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; margin-top: 10px; }
-        th, td { border: 1px solid #eee; padding: 12px; text-align: center; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: center; }
         th { background-color: #007bff; color: white; }
         .last-two { color: #d9534f; font-weight: bold; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        
-        /* Thông báo đã chép */
-        #toast { visibility: hidden; min-width: 150px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 10px; position: fixed; z-index: 1; bottom: 30px; font-size: 14px; }
+        #toast { visibility: hidden; min-width: 150px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 10px; position: fixed; bottom: 30px; }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 1.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
@@ -37,16 +28,15 @@
 </head>
 <body>
 
-    <h2>Công cụ tạo 64 số ngẫu nhiên</h2>
+    <h2>Tạo 64 số ngẫu nhiên (Không trùng lặp)</h2>
 
     <div class="controls">
         <div class="btn-group">
-            <button class="btn-generate" onclick="generateNumbers()">Tạo dãy số mới</button>
+            <button class="btn-generate" onclick="generateUniqueNumbers()">Tạo dãy số mới</button>
             <button class="btn-copy" onclick="copyToClipboard()">Sao chép dãy số</button>
         </div>
-        
-        <span class="copy-label">Dãy số đuôi (Sắp xếp từ bé đến lớn):</span>
-        <textarea id="copyArea" readonly placeholder="Nhấn nút để tạo số..."></textarea>
+        <span class="copy-label">Dãy 64 số đuôi (Sắp xếp tăng dần):</span>
+        <textarea id="copyArea" readonly></textarea>
     </div>
 
     <div id="toast">Đã sao chép!</div>
@@ -56,62 +46,61 @@
             <tr>
                 <th>STT</th>
                 <th>Số tự nhiên (5 số)</th>
-                <th>2 số cuối</th>
+                <th>2 số đuôi</th>
             </tr>
         </thead>
-        <tbody id="numberTable">
-        </tbody>
+        <tbody id="numberTable"></tbody>
     </table>
 
     <script>
-        function generateNumbers() {
-            const tbody = document.getElementById('numberTable');
-            const copyArea = document.getElementById('copyArea');
-            tbody.innerHTML = ''; 
-            
-            let lastTwoList = [];
-
-            for (let i = 1; i <= 64; i++) {
-                let fullNumber = Math.floor(Math.random() * 90000) + 10000;
-                let lastTwo = fullNumber.toString().slice(-2);
-                
-                lastTwoList.push(lastTwo);
-
-                let row = `<tr>
-                    <td><b>${i}</b></td>
-                    <td>${fullNumber}</td>
-                    <td class="last-two">${lastTwo}</td>
-                </tr>`;
-                tbody.innerHTML += row;
+        function generateUniqueNumbers() {
+            // 1. Tạo mảng chứa 100 số từ 00 đến 99
+            let pool = [];
+            for (let i = 0; i <= 99; i++) {
+                pool.push(i.toString().padStart(2, '0'));
             }
 
-            // Sắp xếp dãy số từ bé đến lớn
-            lastTwoList.sort((a, b) => a - b);
+            // 2. Trộn ngẫu nhiên mảng (Fisher-Yates Shuffle)
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
 
-            // Ghi vào ô textarea
-            copyArea.value = lastTwoList.join(', ');
+            // 3. Lấy 64 số đầu tiên sau khi đã trộn
+            let selectedTails = pool.slice(0, 64);
+            
+            const tbody = document.getElementById('numberTable');
+            tbody.innerHTML = '';
+            
+            // Hiển thị lên bảng (theo thứ tự ngẫu nhiên vừa bốc)
+            selectedTails.forEach((tail, index) => {
+                let prefix = Math.floor(Math.random() * 900) + 100; // Tạo 3 số đầu ngẫu nhiên
+                let fullNumber = prefix.toString() + tail;
+                
+                let row = `<tr>
+                    <td><b>${index + 1}</b></td>
+                    <td>${fullNumber}</td>
+                    <td class="last-two">${tail}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+
+            // 4. Sắp xếp dãy số để đưa vào ô Copy
+            let sortedTails = [...selectedTails].sort((a, b) => a - b);
+            document.getElementById('copyArea').value = sortedTails.join(', ');
         }
 
         function copyToClipboard() {
             const copyArea = document.getElementById('copyArea');
             if (!copyArea.value) return;
-
-            copyArea.select();
-            copyArea.setSelectionRange(0, 99999); // Cho thiết bị di động
-
             navigator.clipboard.writeText(copyArea.value).then(() => {
-                showToast();
+                const toast = document.getElementById("toast");
+                toast.className = "show";
+                setTimeout(() => { toast.className = ""; }, 2000);
             });
         }
 
-        function showToast() {
-            const toast = document.getElementById("toast");
-            toast.className = "show";
-            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 2000);
-        }
-
-        window.onload = generateNumbers;
+        window.onload = generateUniqueNumbers;
     </script>
-
 </body>
 </html>
