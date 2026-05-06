@@ -1,109 +1,162 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Tool xổ số Pro</title>
-  <style>
-    body { font-family: Arial; text-align: center; padding: 20px; }
-    select, button { padding: 10px; margin: 10px; }
-    #result { font-size: 22px; margin-top: 20px; }
-    #history { margin-top: 20px; text-align: left; max-width: 400px; margin-inline: auto; }
-    .item { padding: 5px; border-bottom: 1px solid #ccc; }
-  </style>
+<meta charset="UTF-8">
+
+<!-- QUAN TRỌNG cho mobile -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Tool xổ số mobile</title>
+
+<style>
+  body {
+    font-family: Arial;
+    padding: 15px;
+    margin: 0;
+    background: #f5f5f5;
+  }
+
+  .container {
+    max-width: 500px;
+    margin: auto;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  input, select, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+  }
+
+  button {
+    background: #007bff;
+    color: white;
+    border: none;
+    font-weight: bold;
+  }
+
+  button:active {
+    background: #0056b3;
+  }
+
+  #result {
+    font-size: 20px;
+    margin-top: 20px;
+    word-wrap: break-word;
+  }
+
+  small {
+    color: #666;
+  }
+
+  @media (max-width: 400px) {
+    h2 {
+      font-size: 18px;
+    }
+    #result {
+      font-size: 18px;
+    }
+  }
+</style>
 </head>
+
 <body>
 
-<h2>🎯 Tool xổ số (có lưu lịch sử)</h2>
+<div class="container">
+
+<h2>🎯 Tool xổ số</h2>
+
+<input id="userNumber" placeholder="Nhập số của bạn" />
 
 <select id="game">
+  <option value="lotto535">Lotto 5/35 (+ đặc biệt)</option>
   <option value="mega">Mega 6/45</option>
   <option value="power">Power 6/55</option>
-  <option value="lotto535">Lotto 5/35</option>
-  <option value="keno">Keno</option>
   <option value="xsmb2">XSMB 2 số</option>
 </select>
 
 <button onclick="generate()">🎲 Tạo số</button>
-<button onclick="clearHistory()">🗑 Xóa lịch sử</button>
 
 <div id="result"></div>
 
-<h3>📜 Lịch sử</h3>
-<div id="history"></div>
+</div>
 
 <script>
-// ===== load history =====
-function loadHistory(){
-  const data = JSON.parse(localStorage.getItem("lottery_history")) || [];
-  const div = document.getElementById("history");
-  div.innerHTML = "";
-
-  data.reverse().forEach(item=>{
-    div.innerHTML += `<div class="item">${item}</div>`;
-  });
+// ===== seed =====
+function createSeed(input){
+  const d = new Date();
+  const str = input + d.getFullYear() + (d.getMonth()+1) + d.getDate();
+  let seed = 0;
+  for(let i=0;i<str.length;i++){
+    seed += str.charCodeAt(i);
+  }
+  return seed;
 }
 
-// ===== save =====
-function saveHistory(text){
-  let data = JSON.parse(localStorage.getItem("lottery_history")) || [];
-  data.push(text);
-
-  // giới hạn 50 dòng
-  if(data.length > 50) data.shift();
-
-  localStorage.setItem("lottery_history", JSON.stringify(data));
+// ===== random seed =====
+function seededRandom(seed){
+  return function(){
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  }
 }
 
-// ===== random =====
-function randomUnique(count, max) {
+// ===== unique =====
+function generateUnique(rand, count, max){
   const set = new Set();
-  while (set.size < count) {
-    set.add(Math.floor(Math.random() * max) + 1);
+  while(set.size < count){
+    set.add(Math.floor(rand()*max)+1);
   }
   return Array.from(set).sort((a,b)=>a-b);
 }
 
-// ===== generate =====
+// ===== special =====
+function generateSpecial(rand, arr, max){
+  let n;
+  do{
+    n = Math.floor(rand()*max)+1;
+  }while(arr.includes(n));
+  return n;
+}
+
+// ===== main =====
 function generate(){
+  const input = document.getElementById("userNumber").value || "default";
   const game = document.getElementById("game").value;
+
+  const rand = seededRandom(createSeed(input));
+
   let result = "";
 
-  if(game === "mega"){
-    result = randomUnique(6,45);
+  if(game === "lotto535"){
+    const main = generateUnique(rand, 5, 35);
+    const sp = generateSpecial(rand, main, 35);
+    result = main.map(n=>n.toString().padStart(2,'0')).join(', ') + " ⭐ " + sp.toString().padStart(2,'0');
+
+  } else if(game === "mega"){
+    result = generateUnique(rand, 6, 45).map(n=>n.toString().padStart(2,'0')).join(', ');
 
   } else if(game === "power"){
-    result = randomUnique(6,55);
-
-  } else if(game === "lotto535"){
-    result = randomUnique(5,35);
-
-  } else if(game === "keno"){
-    result = randomUnique(Math.floor(Math.random()*10)+1,80);
+    const main = generateUnique(rand, 6, 55);
+    const sp = generateSpecial(rand, main, 55);
+    result = main.map(n=>n.toString().padStart(2,'0')).join(', ') + " ⭐ " + sp.toString().padStart(2,'0');
 
   } else if(game === "xsmb2"){
-    result = Math.floor(Math.random()*100).toString().padStart(2,'0');
+    result = Math.floor(rand()*100).toString().padStart(2,'0');
   }
-
-  if(Array.isArray(result)){
-    result = result.map(n => n.toString().padStart(2,'0')).join(', ');
-  }
-
-  const text = `${new Date().toLocaleString()} | ${game.toUpperCase()} → ${result}`;
 
   document.getElementById("result").innerHTML = "👉 " + result;
-
-  saveHistory(text);
-  loadHistory();
 }
-
-// ===== clear =====
-function clearHistory(){
-  localStorage.removeItem("lottery_history");
-  loadHistory();
-}
-
-// load khi mở web
-loadHistory();
 </script>
 
 </body>
