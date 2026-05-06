@@ -3,34 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tool xổ số PRO</title>
+<title>Tool xổ số nâng cao</title>
 
 <style>
-body { font-family: Arial; padding: 15px; background:#f5f5f5; }
-.container {
-  max-width: 500px;
-  margin: auto;
-  background: white;
-  padding: 15px;
-  border-radius: 10px;
-}
-input, select, button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  font-size: 16px;
-  border-radius: 8px;
-}
-button { background:#007bff; color:white; border:none; }
-#result { margin-top:20px; font-size:18px; }
-label { display:block; margin-top:10px; }
+  body { font-family: Arial; padding: 15px; background:#f5f5f5; }
+  .container {
+    max-width: 500px;
+    margin: auto;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+  }
+  input, select, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+  button { background:#007bff; color:white; border:none; }
+  #result { margin-top:20px; font-size:20px; }
+  label { display:block; margin-top:10px; }
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<h2>🎯 Tool xổ số PRO</h2>
+<h2>🎯 Tool random theo ngày</h2>
 
 <input id="userNumber" placeholder="Nhập số của bạn">
 
@@ -55,7 +55,6 @@ label { display:block; margin-top:10px; }
 </div>
 
 <script>
-
 // ===== lấy ngày =====
 function getDateString(){
   const useToday = document.getElementById("useToday").checked;
@@ -70,7 +69,9 @@ function getDateString(){
 
 // ===== seed =====
 function createSeed(input){
-  const str = input + getDateString();
+  const dateStr = getDateString();
+  const str = input + dateStr;
+
   let seed = 0;
   for(let i=0;i<str.length;i++){
     seed += str.charCodeAt(i);
@@ -78,7 +79,7 @@ function createSeed(input){
   return seed;
 }
 
-// ===== random =====
+// ===== random seed =====
 function seededRandom(seed){
   return function(){
     seed = (seed * 9301 + 49297) % 233280;
@@ -92,7 +93,7 @@ function generateUnique(rand, count, max){
   while(set.size < count){
     set.add(Math.floor(rand()*max)+1);
   }
-  return Array.from(set);
+  return Array.from(set).sort((a,b)=>a-b);
 }
 
 // ===== special =====
@@ -104,36 +105,6 @@ function generateSpecial(rand, arr, max){
   return n;
 }
 
-// ===== CÁCH 1 =====
-function method1(nums){
-  return nums.map(n=>{
-    let sub = Math.floor(n/10)+1;
-    let val = n - sub;
-    return val < 0 ? n : val;
-  });
-}
-
-// ===== CÁCH 2 =====
-function method2(nums){
-  return nums.map(n=>{
-    let str = n.toString().padStart(2,'0');
-    let rev = parseInt(str.split('').reverse().join(''));
-    if(rev <= 45 && rev > 0){
-      return rev;
-    } else {
-      return Math.max(0, n - 1);
-    }
-  });
-}
-
-// ===== chuẩn hóa =====
-function normalize(arr){
-  return [...new Set(arr)]
-    .filter(n => n >= 0 && n <= 45)
-    .sort((a,b)=>a-b)
-    .map(n => n.toString().padStart(2,'0'));
-}
-
 // ===== main =====
 function generate(){
   const input = document.getElementById("userNumber").value || "default";
@@ -142,52 +113,28 @@ function generate(){
   const seed = createSeed(input);
   const rand = seededRandom(seed);
 
-  let base = [];
-  let special = null;
+  let result = "";
 
   if(game === "lotto535"){
-    base = generateUnique(rand, 5, 35);
-    special = generateSpecial(rand, base, 35);
+    const main = generateUnique(rand, 5, 35);
+    const sp = generateSpecial(rand, main, 35);
+    result = main.map(n=>n.toString().padStart(2,'0')).join(', ') + " ⭐ " + sp.toString().padStart(2,'0');
 
   } else if(game === "mega"){
-    base = generateUnique(rand, 6, 45);
+    result = generateUnique(rand, 6, 45).map(n=>n.toString().padStart(2,'0')).join(', ');
 
   } else if(game === "power"){
-    base = generateUnique(rand, 6, 55);
-    special = generateSpecial(rand, base, 55);
+    const main = generateUnique(rand, 6, 55);
+    const sp = generateSpecial(rand, main, 55);
+    result = main.map(n=>n.toString().padStart(2,'0')).join(', ') + " ⭐ " + sp.toString().padStart(2,'0');
 
   } else if(game === "xsmb2"){
-    const num = Math.floor(rand()*100);
-    document.getElementById("result").innerHTML =
-      "👉 " + num.toString().padStart(2,'0');
-    return;
+    result = Math.floor(rand()*100).toString().padStart(2,'0');
   }
 
-  // ===== áp dụng 2 cách =====
-  const m1 = method1(base);
-  const m2 = method2(base);
-
-  const final = normalize([...m1, ...m2]);
-
-  // ===== format =====
-  const baseStr = base.map(n=>n.toString().padStart(2,'0')).join(', ');
-  const m1Str = normalize(m1).join(', ');
-  const m2Str = normalize(m2).join(', ');
-
-  let specialStr = "";
-  if(special !== null){
-    specialStr = " ⭐ " + special.toString().padStart(2,'0');
-  }
-
-  document.getElementById("result").innerHTML = `
-    🔹 Gốc: ${baseStr}${specialStr}<br>
-    🔸 Cách 1: ${m1Str}<br>
-    🔸 Cách 2: ${m2Str}<br>
-    🔥 Kết quả: ${final.join(', ')}<br>
-    <small>Ngày: ${getDateString()} | Seed: ${seed}</small>
-  `;
+  document.getElementById("result").innerHTML =
+    "👉 " + result + "<br><small>Ngày: " + getDateString() + " | Seed: " + seed + "</small>";
 }
-
 </script>
 
 </body>
