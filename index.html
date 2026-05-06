@@ -2,40 +2,58 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Tool chọn số xổ số</title>
+  <title>Tool xổ số Pro</title>
   <style>
     body { font-family: Arial; text-align: center; padding: 20px; }
     select, button { padding: 10px; margin: 10px; }
     #result { font-size: 22px; margin-top: 20px; }
+    #history { margin-top: 20px; text-align: left; max-width: 400px; margin-inline: auto; }
+    .item { padding: 5px; border-bottom: 1px solid #ccc; }
   </style>
 </head>
 <body>
 
-<h2>🎯 Tool chọn số Vietlott + XSMB</h2>
+<h2>🎯 Tool xổ số (có lưu lịch sử)</h2>
 
 <select id="game">
   <option value="mega">Mega 6/45</option>
   <option value="power">Power 6/55</option>
   <option value="lotto535">Lotto 5/35</option>
   <option value="keno">Keno</option>
-  <option value="max3d">Max 3D</option>
-  <option value="max4d">Max 4D</option>
-  <option value="xsmb2">XSMB 2 số (đề)</option>
-  <option value="xsmb3">XSMB 3 càng</option>
+  <option value="xsmb2">XSMB 2 số</option>
 </select>
-
-<select id="mode">
-  <option value="random">Random</option>
-  <option value="history">Theo cầu (giả lập)</option>
-</select>
-
-<br>
 
 <button onclick="generate()">🎲 Tạo số</button>
+<button onclick="clearHistory()">🗑 Xóa lịch sử</button>
 
 <div id="result"></div>
 
+<h3>📜 Lịch sử</h3>
+<div id="history"></div>
+
 <script>
+// ===== load history =====
+function loadHistory(){
+  const data = JSON.parse(localStorage.getItem("lottery_history")) || [];
+  const div = document.getElementById("history");
+  div.innerHTML = "";
+
+  data.reverse().forEach(item=>{
+    div.innerHTML += `<div class="item">${item}</div>`;
+  });
+}
+
+// ===== save =====
+function saveHistory(text){
+  let data = JSON.parse(localStorage.getItem("lottery_history")) || [];
+  data.push(text);
+
+  // giới hạn 50 dòng
+  if(data.length > 50) data.shift();
+
+  localStorage.setItem("lottery_history", JSON.stringify(data));
+}
+
 // ===== random =====
 function randomUnique(count, max) {
   const set = new Set();
@@ -45,18 +63,11 @@ function randomUnique(count, max) {
   return Array.from(set).sort((a,b)=>a-b);
 }
 
-// ===== fake "cầu đẹp" =====
-const hot2 = [01, 11, 22, 33, 44, 55, 66, 77, 88, 99];
-const hot3 = [123, 234, 345, 456, 567, 678, 789];
-
-// ===== main =====
+// ===== generate =====
 function generate(){
   const game = document.getElementById("game").value;
-  const mode = document.getElementById("mode").value;
-
   let result = "";
 
-  // ===== VIETLOTT =====
   if(game === "mega"){
     result = randomUnique(6,45);
 
@@ -67,38 +78,32 @@ function generate(){
     result = randomUnique(5,35);
 
   } else if(game === "keno"){
-    const count = Math.floor(Math.random()*10)+1;
-    result = randomUnique(count,80);
+    result = randomUnique(Math.floor(Math.random()*10)+1,80);
 
-  } else if(game === "max3d"){
-    result = Math.floor(Math.random()*1000).toString().padStart(3,'0');
-
-  } else if(game === "max4d"){
-    result = Math.floor(Math.random()*10000).toString().padStart(4,'0');
-
-  // ===== XSMB =====
   } else if(game === "xsmb2"){
-    if(mode === "random"){
-      result = Math.floor(Math.random()*100).toString().padStart(2,'0');
-    } else {
-      result = hot2[Math.floor(Math.random()*hot2.length)];
-    }
-
-  } else if(game === "xsmb3"){
-    if(mode === "random"){
-      result = Math.floor(Math.random()*1000).toString().padStart(3,'0');
-    } else {
-      result = hot3[Math.floor(Math.random()*hot3.length)];
-    }
+    result = Math.floor(Math.random()*100).toString().padStart(2,'0');
   }
 
-  // format hiển thị
   if(Array.isArray(result)){
     result = result.map(n => n.toString().padStart(2,'0')).join(', ');
   }
 
+  const text = `${new Date().toLocaleString()} | ${game.toUpperCase()} → ${result}`;
+
   document.getElementById("result").innerHTML = "👉 " + result;
+
+  saveHistory(text);
+  loadHistory();
 }
+
+// ===== clear =====
+function clearHistory(){
+  localStorage.removeItem("lottery_history");
+  loadHistory();
+}
+
+// load khi mở web
+loadHistory();
 </script>
 
 </body>
