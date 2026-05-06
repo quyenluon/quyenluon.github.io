@@ -22,30 +22,20 @@
     border-radius: 8px;
   }
   button { background:#007bff; color:white; border:none; }
-  #result { margin-top:20px; font-size:20px; }
-  label { display:block; margin-top:10px; }
+  #result { margin-top:20px; font-size:18px; }
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<h2>🎯 Tool random theo ngày</h2>
+<h2>🎯 Tool random + biến đổi</h2>
 
 <input id="userNumber" placeholder="Nhập số của bạn">
 
-<label>
-  <input type="checkbox" id="useToday" checked>
-  Dùng ngày hôm nay
-</label>
-
-<input type="date" id="customDate">
-
 <select id="game">
-  <option value="lotto535">Lotto 5/35 (+ đặc biệt)</option>
+  <option value="lotto535">Lotto 5/35</option>
   <option value="mega">Mega 6/45</option>
-  <option value="power">Power 6/55</option>
-  <option value="xsmb2">XSMB 2 số</option>
 </select>
 
 <button onclick="generate()">🎲 Tạo số</button>
@@ -55,23 +45,11 @@
 </div>
 
 <script>
-// ===== lấy ngày =====
-function getDateString(){
-  const useToday = document.getElementById("useToday").checked;
-  const custom = document.getElementById("customDate").value;
-
-  if(useToday || !custom){
-    const d = new Date();
-    return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
-  }
-  return custom;
-}
 
 // ===== seed =====
 function createSeed(input){
-  const dateStr = getDateString();
-  const str = input + dateStr;
-
+  const d = new Date();
+  const str = input + d.getFullYear() + (d.getMonth()+1) + d.getDate();
   let seed = 0;
   for(let i=0;i<str.length;i++){
     seed += str.charCodeAt(i);
@@ -79,7 +57,7 @@ function createSeed(input){
   return seed;
 }
 
-// ===== random seed =====
+// ===== random =====
 function seededRandom(seed){
   return function(){
     seed = (seed * 9301 + 49297) % 233280;
@@ -93,16 +71,39 @@ function generateUnique(rand, count, max){
   while(set.size < count){
     set.add(Math.floor(rand()*max)+1);
   }
-  return Array.from(set).sort((a,b)=>a-b);
+  return Array.from(set);
 }
 
-// ===== special =====
-function generateSpecial(rand, arr, max){
-  let n;
-  do{
-    n = Math.floor(rand()*max)+1;
-  }while(arr.includes(n));
-  return n;
+// ===== CÁCH 1 (trừ linh hoạt) =====
+function method1(nums){
+  return nums.map(n=>{
+    let sub = Math.floor(n/10) + 1; // giảm theo hàng chục
+    let val = n - sub;
+    if(val < 0) val = n; // tránh âm
+    return val;
+  });
+}
+
+// ===== CÁCH 2 (biến đổi chữ số) =====
+function method2(nums){
+  return nums.map(n=>{
+    let str = n.toString().padStart(2,'0');
+    let rev = parseInt(str.split('').reverse().join(''));
+
+    if(rev <= 45 && rev > 0){
+      return rev;
+    } else {
+      return Math.max(0, n - 1);
+    }
+  });
+}
+
+// ===== lọc + chuẩn hóa =====
+function normalize(arr){
+  return [...new Set(arr)]
+    .filter(n => n >= 0 && n <= 45)
+    .sort((a,b)=>a-b)
+    .map(n => n.toString().padStart(2,'0'));
 }
 
 // ===== main =====
@@ -110,31 +111,29 @@ function generate(){
   const input = document.getElementById("userNumber").value || "default";
   const game = document.getElementById("game").value;
 
-  const seed = createSeed(input);
-  const rand = seededRandom(seed);
+  const rand = seededRandom(createSeed(input));
 
-  let result = "";
+  let base = [];
 
   if(game === "lotto535"){
-    const main = generateUnique(rand, 5, 35);
-    const sp = generateSpecial(rand, main, 35);
-    result = main.map(n=>n.toString().padStart(2,'0')).join(', ') + " ⭐ " + sp.toString().padStart(2,'0');
-
-  } else if(game === "mega"){
-    result = generateUnique(rand, 6, 45).map(n=>n.toString().padStart(2,'0')).join(', ');
-
-  } else if(game === "power"){
-    const main = generateUnique(rand, 6, 55);
-    const sp = generateSpecial(rand, main, 55);
-    result = main.map(n=>n.toString().padStart(2,'0')).join(', ') + " ⭐ " + sp.toString().padStart(2,'0');
-
-  } else if(game === "xsmb2"){
-    result = Math.floor(rand()*100).toString().padStart(2,'0');
+    base = generateUnique(rand, 5, 35);
+  } else {
+    base = generateUnique(rand, 6, 45);
   }
 
-  document.getElementById("result").innerHTML =
-    "👉 " + result + "<br><small>Ngày: " + getDateString() + " | Seed: " + seed + "</small>";
+  const m1 = method1(base);
+  const m2 = method2(base);
+
+  const final = normalize([...m1, ...m2]);
+
+  document.getElementById("result").innerHTML = `
+    🔹 Gốc: ${base.map(n=>n.toString().padStart(2,'0')).join(', ')}<br>
+    🔸 Cách 1: ${normalize(m1).join(', ')}<br>
+    🔸 Cách 2: ${normalize(m2).join(', ')}<br>
+    🔥 Kết quả cuối: ${final.join(', ')}
+  `;
 }
+
 </script>
 
 </body>
