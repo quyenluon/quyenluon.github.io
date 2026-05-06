@@ -3,39 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tool xổ số nâng cao</title>
+<title>Tool xổ số PRO</title>
 
 <style>
-  body { font-family: Arial; padding: 15px; background:#f5f5f5; }
-  .container {
-    max-width: 500px;
-    margin: auto;
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-  }
-  input, select, button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    font-size: 16px;
-    border-radius: 8px;
-  }
-  button { background:#007bff; color:white; border:none; }
-  #result { margin-top:20px; font-size:18px; }
+body { font-family: Arial; padding: 15px; background:#f5f5f5; }
+.container {
+  max-width: 500px;
+  margin: auto;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+}
+input, select, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  font-size: 16px;
+  border-radius: 8px;
+}
+button { background:#007bff; color:white; border:none; }
+#result { margin-top:20px; font-size:18px; }
+label { display:block; margin-top:10px; }
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<h2>🎯 Tool random + biến đổi</h2>
+<h2>🎯 Tool xổ số PRO</h2>
 
 <input id="userNumber" placeholder="Nhập số của bạn">
 
+<label>
+  <input type="checkbox" id="useToday" checked>
+  Dùng ngày hôm nay
+</label>
+
+<input type="date" id="customDate">
+
 <select id="game">
-  <option value="lotto535">Lotto 5/35</option>
+  <option value="lotto535">Lotto 5/35 (+ đặc biệt)</option>
   <option value="mega">Mega 6/45</option>
+  <option value="power">Power 6/55</option>
+  <option value="xsmb2">XSMB 2 số</option>
 </select>
 
 <button onclick="generate()">🎲 Tạo số</button>
@@ -46,10 +56,21 @@
 
 <script>
 
+// ===== lấy ngày =====
+function getDateString(){
+  const useToday = document.getElementById("useToday").checked;
+  const custom = document.getElementById("customDate").value;
+
+  if(useToday || !custom){
+    const d = new Date();
+    return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
+  }
+  return custom;
+}
+
 // ===== seed =====
 function createSeed(input){
-  const d = new Date();
-  const str = input + d.getFullYear() + (d.getMonth()+1) + d.getDate();
+  const str = input + getDateString();
   let seed = 0;
   for(let i=0;i<str.length;i++){
     seed += str.charCodeAt(i);
@@ -74,22 +95,29 @@ function generateUnique(rand, count, max){
   return Array.from(set);
 }
 
-// ===== CÁCH 1 (trừ linh hoạt) =====
+// ===== special =====
+function generateSpecial(rand, arr, max){
+  let n;
+  do{
+    n = Math.floor(rand()*max)+1;
+  }while(arr.includes(n));
+  return n;
+}
+
+// ===== CÁCH 1 =====
 function method1(nums){
   return nums.map(n=>{
-    let sub = Math.floor(n/10) + 1; // giảm theo hàng chục
+    let sub = Math.floor(n/10)+1;
     let val = n - sub;
-    if(val < 0) val = n; // tránh âm
-    return val;
+    return val < 0 ? n : val;
   });
 }
 
-// ===== CÁCH 2 (biến đổi chữ số) =====
+// ===== CÁCH 2 =====
 function method2(nums){
   return nums.map(n=>{
     let str = n.toString().padStart(2,'0');
     let rev = parseInt(str.split('').reverse().join(''));
-
     if(rev <= 45 && rev > 0){
       return rev;
     } else {
@@ -98,7 +126,7 @@ function method2(nums){
   });
 }
 
-// ===== lọc + chuẩn hóa =====
+// ===== chuẩn hóa =====
 function normalize(arr){
   return [...new Set(arr)]
     .filter(n => n >= 0 && n <= 45)
@@ -111,26 +139,52 @@ function generate(){
   const input = document.getElementById("userNumber").value || "default";
   const game = document.getElementById("game").value;
 
-  const rand = seededRandom(createSeed(input));
+  const seed = createSeed(input);
+  const rand = seededRandom(seed);
 
   let base = [];
+  let special = null;
 
   if(game === "lotto535"){
     base = generateUnique(rand, 5, 35);
-  } else {
+    special = generateSpecial(rand, base, 35);
+
+  } else if(game === "mega"){
     base = generateUnique(rand, 6, 45);
+
+  } else if(game === "power"){
+    base = generateUnique(rand, 6, 55);
+    special = generateSpecial(rand, base, 55);
+
+  } else if(game === "xsmb2"){
+    const num = Math.floor(rand()*100);
+    document.getElementById("result").innerHTML =
+      "👉 " + num.toString().padStart(2,'0');
+    return;
   }
 
+  // ===== áp dụng 2 cách =====
   const m1 = method1(base);
   const m2 = method2(base);
 
   const final = normalize([...m1, ...m2]);
 
+  // ===== format =====
+  const baseStr = base.map(n=>n.toString().padStart(2,'0')).join(', ');
+  const m1Str = normalize(m1).join(', ');
+  const m2Str = normalize(m2).join(', ');
+
+  let specialStr = "";
+  if(special !== null){
+    specialStr = " ⭐ " + special.toString().padStart(2,'0');
+  }
+
   document.getElementById("result").innerHTML = `
-    🔹 Gốc: ${base.map(n=>n.toString().padStart(2,'0')).join(', ')}<br>
-    🔸 Cách 1: ${normalize(m1).join(', ')}<br>
-    🔸 Cách 2: ${normalize(m2).join(', ')}<br>
-    🔥 Kết quả cuối: ${final.join(', ')}
+    🔹 Gốc: ${baseStr}${specialStr}<br>
+    🔸 Cách 1: ${m1Str}<br>
+    🔸 Cách 2: ${m2Str}<br>
+    🔥 Kết quả: ${final.join(', ')}<br>
+    <small>Ngày: ${getDateString()} | Seed: ${seed}</small>
   `;
 }
 
