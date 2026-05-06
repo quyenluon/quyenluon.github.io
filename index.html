@@ -1,106 +1,105 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tạo 64 Số Ngẫu Nhiên Không Trùng</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        h2 { color: #1c1e21; margin-bottom: 10px; }
-        .controls { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 90%; max-width: 800px; text-align: center; margin-bottom: 20px; }
-        .btn-group { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; }
-        button { padding: 12px 24px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.3s; }
-        .btn-generate { background-color: #28a745; color: white; }
-        .btn-generate:hover { background-color: #218838; }
-        .btn-copy { background-color: #007bff; color: white; }
-        .btn-copy:hover { background-color: #0056b3; }
-        textarea { width: 100%; height: 100px; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 15px; resize: none; box-sizing: border-box; background-color: #fafafa; }
-        .copy-label { display: block; text-align: left; margin-bottom: 8px; font-weight: bold; color: #555; }
-        table { border-collapse: collapse; width: 90%; max-width: 800px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; margin-top: 10px; }
-        th, td { border: 1px solid #eee; padding: 10px; text-align: center; }
-        th { background-color: #007bff; color: white; }
-        .last-two { color: #d9534f; font-weight: bold; }
-        #toast { visibility: hidden; min-width: 150px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 10px; position: fixed; bottom: 30px; }
-        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 1.5s; }
-        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
-        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
-    </style>
+  <meta charset="UTF-8">
+  <title>Tool chọn số xổ số</title>
+  <style>
+    body { font-family: Arial; text-align: center; padding: 20px; }
+    select, button { padding: 10px; margin: 10px; }
+    #result { font-size: 22px; margin-top: 20px; }
+  </style>
 </head>
 <body>
 
-    <h2>Tạo 64 số ngẫu nhiên (Không trùng lặp)</h2>
+<h2>🎯 Tool chọn số Vietlott + XSMB</h2>
 
-    <div class="controls">
-        <div class="btn-group">
-            <button class="btn-generate" onclick="generateUniqueNumbers()">Tạo dãy số mới</button>
-            <button class="btn-copy" onclick="copyToClipboard()">Sao chép dãy số</button>
-        </div>
-        <span class="copy-label">Dãy 64 số đuôi (Sắp xếp tăng dần):</span>
-        <textarea id="copyArea" readonly></textarea>
-    </div>
+<select id="game">
+  <option value="mega">Mega 6/45</option>
+  <option value="power">Power 6/55</option>
+  <option value="lotto535">Lotto 5/35</option>
+  <option value="keno">Keno</option>
+  <option value="max3d">Max 3D</option>
+  <option value="max4d">Max 4D</option>
+  <option value="xsmb2">XSMB 2 số (đề)</option>
+  <option value="xsmb3">XSMB 3 càng</option>
+</select>
 
-    <div id="toast">Đã sao chép!</div>
+<select id="mode">
+  <option value="random">Random</option>
+  <option value="history">Theo cầu (giả lập)</option>
+</select>
 
-    <table>
-        <thead>
-            <tr>
-                <th>STT</th>
-                <th>Số tự nhiên (5 số)</th>
-                <th>2 số đuôi</th>
-            </tr>
-        </thead>
-        <tbody id="numberTable"></tbody>
-    </table>
+<br>
 
-    <script>
-        function generateUniqueNumbers() {
-            // 1. Tạo mảng chứa 100 số từ 00 đến 99
-            let pool = [];
-            for (let i = 0; i <= 99; i++) {
-                pool.push(i.toString().padStart(2, '0'));
-            }
+<button onclick="generate()">🎲 Tạo số</button>
 
-            // 2. Trộn ngẫu nhiên mảng (Fisher-Yates Shuffle)
-            for (let i = pool.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [pool[i], pool[j]] = [pool[j], pool[i]];
-            }
+<div id="result"></div>
 
-            // 3. Lấy 64 số đầu tiên sau khi đã trộn
-            let selectedTails = pool.slice(0, 64);
-            
-            const tbody = document.getElementById('numberTable');
-            tbody.innerHTML = '';
-            
-            // Hiển thị lên bảng (theo thứ tự ngẫu nhiên vừa bốc)
-            selectedTails.forEach((tail, index) => {
-                let prefix = Math.floor(Math.random() * 900) + 100; // Tạo 3 số đầu ngẫu nhiên
-                let fullNumber = prefix.toString() + tail;
-                
-                let row = `<tr>
-                    <td><b>${index + 1}</b></td>
-                    <td>${fullNumber}</td>
-                    <td class="last-two">${tail}</td>
-                </tr>`;
-                tbody.innerHTML += row;
-            });
+<script>
+// ===== random =====
+function randomUnique(count, max) {
+  const set = new Set();
+  while (set.size < count) {
+    set.add(Math.floor(Math.random() * max) + 1);
+  }
+  return Array.from(set).sort((a,b)=>a-b);
+}
 
-            // 4. Sắp xếp dãy số để đưa vào ô Copy
-            let sortedTails = [...selectedTails].sort((a, b) => a - b);
-            document.getElementById('copyArea').value = sortedTails.join(', ');
-        }
+// ===== fake "cầu đẹp" =====
+const hot2 = [01, 11, 22, 33, 44, 55, 66, 77, 88, 99];
+const hot3 = [123, 234, 345, 456, 567, 678, 789];
 
-        function copyToClipboard() {
-            const copyArea = document.getElementById('copyArea');
-            if (!copyArea.value) return;
-            navigator.clipboard.writeText(copyArea.value).then(() => {
-                const toast = document.getElementById("toast");
-                toast.className = "show";
-                setTimeout(() => { toast.className = ""; }, 2000);
-            });
-        }
+// ===== main =====
+function generate(){
+  const game = document.getElementById("game").value;
+  const mode = document.getElementById("mode").value;
 
-        window.onload = generateUniqueNumbers;
-    </script>
+  let result = "";
+
+  // ===== VIETLOTT =====
+  if(game === "mega"){
+    result = randomUnique(6,45);
+
+  } else if(game === "power"){
+    result = randomUnique(6,55);
+
+  } else if(game === "lotto535"){
+    result = randomUnique(5,35);
+
+  } else if(game === "keno"){
+    const count = Math.floor(Math.random()*10)+1;
+    result = randomUnique(count,80);
+
+  } else if(game === "max3d"){
+    result = Math.floor(Math.random()*1000).toString().padStart(3,'0');
+
+  } else if(game === "max4d"){
+    result = Math.floor(Math.random()*10000).toString().padStart(4,'0');
+
+  // ===== XSMB =====
+  } else if(game === "xsmb2"){
+    if(mode === "random"){
+      result = Math.floor(Math.random()*100).toString().padStart(2,'0');
+    } else {
+      result = hot2[Math.floor(Math.random()*hot2.length)];
+    }
+
+  } else if(game === "xsmb3"){
+    if(mode === "random"){
+      result = Math.floor(Math.random()*1000).toString().padStart(3,'0');
+    } else {
+      result = hot3[Math.floor(Math.random()*hot3.length)];
+    }
+  }
+
+  // format hiển thị
+  if(Array.isArray(result)){
+    result = result.map(n => n.toString().padStart(2,'0')).join(', ');
+  }
+
+  document.getElementById("result").innerHTML = "👉 " + result;
+}
+</script>
+
 </body>
 </html>
