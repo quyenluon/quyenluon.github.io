@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tạo 64 số ngẫu nhiên</title>
+<title>Crypto Random 64 Số</title>
 
 <style>
     body{
@@ -27,22 +27,34 @@
         box-sizing:border-box;
     }
 
+    .info{
+        color:#aaa;
+        margin-bottom:15px;
+        line-height:1.7;
+    }
+
     .exclude-list{
         background:#222;
         padding:10px;
         border-radius:10px;
         min-height:60px;
-        line-height:2;
-        margin-bottom:15px;
+        margin-bottom:20px;
     }
 
     .tag{
-        display:inline-block;
+        display:inline-flex;
+        align-items:center;
         background:#e17055;
-        padding:6px 10px;
-        border-radius:8px;
-        margin:4px;
+        padding:8px 12px;
+        border-radius:10px;
+        margin:5px;
         font-size:18px;
+    }
+
+    .remove{
+        margin-left:10px;
+        cursor:pointer;
+        font-weight:bold;
     }
 
     button{
@@ -73,25 +85,23 @@
         word-wrap:break-word;
         font-size:20px;
     }
-
-    .info{
-        color:#aaa;
-        margin-bottom:10px;
-    }
 </style>
 </head>
 <body>
 
-<h2>Danh sách số không xuất hiện</h2>
+<h2>Danh sách số cấm</h2>
 
 <div class="info">
-    Nhập tối đa 15 số. Khi vượt quá 15 số, số cũ nhất sẽ tự bị xóa.
+    • Tối đa 20 số<br>
+    • Số mới hiển thị trước<br>
+    • Có thể xóa từng số<br>
+    • Dùng Crypto Random mạnh hơn Math.random()
 </div>
 
-<input 
-    type="text" 
-    id="numberInput" 
-    placeholder="Nhập số từ 00 đến 99 rồi nhấn Enter"
+<input
+    type="text"
+    id="numberInput"
+    placeholder="Nhập số 00-99 rồi nhấn Enter"
 />
 
 <div class="exclude-list" id="excludeList"></div>
@@ -115,30 +125,52 @@ function formatNumber(num){
     return num.toString().padStart(2, '0');
 }
 
-// Hiển thị danh sách loại trừ
+// Crypto random
+function secureRandom(max){
+
+    const array = new Uint32Array(1);
+
+    crypto.getRandomValues(array);
+
+    return array[0] % max;
+}
+
+// Hiển thị danh sách cấm
 function renderExcludeList(){
 
     const container = document.getElementById("excludeList");
 
     container.innerHTML = "";
 
-    excludeNumbers.forEach(num => {
+    [...excludeNumbers].reverse().forEach(num => {
 
         container.innerHTML += `
-            <span class="tag">${num}</span>
+            <span class="tag">
+                ${num}
+                <span class="remove" onclick="removeNumber('${num}')">
+                    ×
+                </span>
+            </span>
         `;
 
     });
 }
 
-// Nhập số bằng Enter
+// Xóa số cấm
+function removeNumber(num){
+
+    excludeNumbers = excludeNumbers.filter(item => item !== num);
+
+    renderExcludeList();
+}
+
+// Nhập số
 document.getElementById("numberInput").addEventListener("keydown", function(e){
 
     if(e.key === "Enter"){
 
         let value = this.value.trim();
 
-        // Chỉ cho nhập số
         if(value === "" || isNaN(value)){
             this.value = "";
             return;
@@ -146,23 +178,27 @@ document.getElementById("numberInput").addEventListener("keydown", function(e){
 
         let num = parseInt(value);
 
-        // Giới hạn 00-99
         if(num < 0 || num > 99){
+
             alert("Chỉ nhập số từ 00 đến 99");
+
             this.value = "";
+
             return;
         }
 
         value = formatNumber(num);
 
-        // Không thêm nếu đã tồn tại
+        // Không cho trùng
         if(excludeNumbers.includes(value)){
+
             this.value = "";
+
             return;
         }
 
-        // Nếu vượt quá 15 số → xóa số cũ nhất
-        if(excludeNumbers.length >= 15){
+        // Quá 20 số -> xóa số cũ nhất
+        if(excludeNumbers.length >= 20){
             excludeNumbers.shift();
         }
 
@@ -175,32 +211,39 @@ document.getElementById("numberInput").addEventListener("keydown", function(e){
 
 });
 
-// Tạo 64 số random
+// Tạo số random
 function generateNumbers(){
 
     let allNumbers = [];
 
+    // Tạo danh sách 00-99
     for(let i = 0; i <= 99; i++){
 
         const num = formatNumber(i);
 
+        // Bỏ số cấm
         if(!excludeNumbers.includes(num)){
             allNumbers.push(num);
         }
     }
 
-    // Shuffle
+    // Fisher-Yates + Crypto Random
     for(let i = allNumbers.length - 1; i > 0; i--){
 
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = secureRandom(i + 1);
 
-        [allNumbers[i], allNumbers[j]] = [allNumbers[j], allNumbers[i]];
+        [allNumbers[i], allNumbers[j]] =
+        [allNumbers[j], allNumbers[i]];
     }
 
     // Lấy 64 số
-    const result = allNumbers.slice(0, 64);
+    let result = allNumbers.slice(0, 64);
 
-    document.getElementById("result").innerText = result.join(", ");
+    // Sắp xếp tăng dần
+    result.sort((a, b) => Number(a) - Number(b));
+
+    document.getElementById("result").innerText =
+        result.join(", ");
 }
 
 // Copy
@@ -209,7 +252,9 @@ function copyResult(){
     const text = document.getElementById("result").innerText;
 
     if(!text){
+
         alert("Chưa có danh sách!");
+
         return;
     }
 
