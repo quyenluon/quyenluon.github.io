@@ -1,140 +1,223 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tool xổ số nâng cao</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tạo 64 số ngẫu nhiên</title>
 
 <style>
-  body { font-family: Arial; padding: 15px; background:#f5f5f5; }
-  .container {
-    max-width: 500px;
-    margin: auto;
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-  }
-  input, select, button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    font-size: 16px;
-    border-radius: 8px;
-  }
-  button { background:#007bff; color:white; border:none; }
-  #result { margin-top:20px; font-size:20px; }
-  label { display:block; margin-top:10px; }
+    body{
+        font-family: Arial, sans-serif;
+        background:#111;
+        color:white;
+        padding:20px;
+    }
+
+    h2{
+        margin-bottom:10px;
+    }
+
+    input{
+        width:100%;
+        padding:12px;
+        border:none;
+        border-radius:10px;
+        font-size:18px;
+        margin-bottom:10px;
+        box-sizing:border-box;
+    }
+
+    .exclude-list{
+        background:#222;
+        padding:10px;
+        border-radius:10px;
+        min-height:60px;
+        line-height:2;
+        margin-bottom:15px;
+    }
+
+    .tag{
+        display:inline-block;
+        background:#e17055;
+        padding:6px 10px;
+        border-radius:8px;
+        margin:4px;
+        font-size:18px;
+    }
+
+    button{
+        padding:12px 20px;
+        border:none;
+        border-radius:10px;
+        cursor:pointer;
+        font-size:16px;
+        margin-right:10px;
+    }
+
+    .generate{
+        background:#00b894;
+        color:white;
+    }
+
+    .copy{
+        background:#0984e3;
+        color:white;
+    }
+
+    #result{
+        margin-top:20px;
+        background:#222;
+        padding:15px;
+        border-radius:10px;
+        line-height:2;
+        word-wrap:break-word;
+        font-size:20px;
+    }
+
+    .info{
+        color:#aaa;
+        margin-bottom:10px;
+    }
 </style>
 </head>
-
 <body>
-<div class="container">
 
-<h2>🎯 Tool random theo ngày</h2>
+<h2>Danh sách số không xuất hiện</h2>
 
-<input id="userNumber" placeholder="Nhập số của bạn">
+<div class="info">
+    Nhập tối đa 15 số. Khi vượt quá 15 số, số cũ nhất sẽ tự bị xóa.
+</div>
 
-<label>
-  <input type="checkbox" id="useToday" checked>
-  Dùng ngày hôm nay
-</label>
+<input 
+    type="text" 
+    id="numberInput" 
+    placeholder="Nhập số từ 00 đến 99 rồi nhấn Enter"
+/>
 
-<input type="date" id="customDate">
+<div class="exclude-list" id="excludeList"></div>
 
-<select id="game">
-  <option value="lotto535">Lotto 5/35 (+ đặc biệt)</option>
-  <option value="mega">Mega 6/45</option>
-  <option value="power">Power 6/55</option>
-  <option value="xsmb2">XSMB 2 số</option>
-</select>
+<button class="generate" onclick="generateNumbers()">
+    Tạo 64 số
+</button>
 
-<button onclick="generate()">🎲 Tạo số</button>
+<button class="copy" onclick="copyResult()">
+    Copy danh sách
+</button>
 
 <div id="result"></div>
 
-</div>
-
 <script>
-// ===== lấy ngày =====
-function getDateString(){
-  const useToday = document.getElementById("useToday").checked;
-  const custom = document.getElementById("customDate").value;
 
-  if(useToday || !custom){
-    const d = new Date();
-    return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
-  }
-  return custom;
+let excludeNumbers = [];
+
+// Format 2 chữ số
+function formatNumber(num){
+    return num.toString().padStart(2, '0');
 }
 
-// ===== seed =====
-function createSeed(input){
-  const dateStr = getDateString();
-  const str = input + dateStr;
+// Hiển thị danh sách loại trừ
+function renderExcludeList(){
 
-  let seed = 0;
-  for(let i=0;i<str.length;i++){
-    seed += str.charCodeAt(i);
-  }
-  return seed;
+    const container = document.getElementById("excludeList");
+
+    container.innerHTML = "";
+
+    excludeNumbers.forEach(num => {
+
+        container.innerHTML += `
+            <span class="tag">${num}</span>
+        `;
+
+    });
 }
 
-// ===== random seed =====
-function seededRandom(seed){
-  return function(){
-    seed = (seed * 9301 + 49297) % 233280;
-    return seed / 233280;
-  }
+// Nhập số bằng Enter
+document.getElementById("numberInput").addEventListener("keydown", function(e){
+
+    if(e.key === "Enter"){
+
+        let value = this.value.trim();
+
+        // Chỉ cho nhập số
+        if(value === "" || isNaN(value)){
+            this.value = "";
+            return;
+        }
+
+        let num = parseInt(value);
+
+        // Giới hạn 00-99
+        if(num < 0 || num > 99){
+            alert("Chỉ nhập số từ 00 đến 99");
+            this.value = "";
+            return;
+        }
+
+        value = formatNumber(num);
+
+        // Không thêm nếu đã tồn tại
+        if(excludeNumbers.includes(value)){
+            this.value = "";
+            return;
+        }
+
+        // Nếu vượt quá 15 số → xóa số cũ nhất
+        if(excludeNumbers.length >= 15){
+            excludeNumbers.shift();
+        }
+
+        excludeNumbers.push(value);
+
+        renderExcludeList();
+
+        this.value = "";
+    }
+
+});
+
+// Tạo 64 số random
+function generateNumbers(){
+
+    let allNumbers = [];
+
+    for(let i = 0; i <= 99; i++){
+
+        const num = formatNumber(i);
+
+        if(!excludeNumbers.includes(num)){
+            allNumbers.push(num);
+        }
+    }
+
+    // Shuffle
+    for(let i = allNumbers.length - 1; i > 0; i--){
+
+        const j = Math.floor(Math.random() * (i + 1));
+
+        [allNumbers[i], allNumbers[j]] = [allNumbers[j], allNumbers[i]];
+    }
+
+    // Lấy 64 số
+    const result = allNumbers.slice(0, 64);
+
+    document.getElementById("result").innerText = result.join(", ");
 }
 
-// ===== unique =====
-function generateUnique(rand, count, max){
-  const set = new Set();
-  while(set.size < count){
-    set.add(Math.floor(rand()*max)+1);
-  }
-  return Array.from(set).sort((a,b)=>a-b);
+// Copy
+function copyResult(){
+
+    const text = document.getElementById("result").innerText;
+
+    if(!text){
+        alert("Chưa có danh sách!");
+        return;
+    }
+
+    navigator.clipboard.writeText(text);
+
+    alert("Đã copy danh sách!");
 }
 
-// ===== special =====
-function generateSpecial(rand, arr, max){
-  let n;
-  do{
-    n = Math.floor(rand()*max)+1;
-  }while(arr.includes(n));
-  return n;
-}
-
-// ===== main =====
-function generate(){
-  const input = document.getElementById("userNumber").value || "default";
-  const game = document.getElementById("game").value;
-
-  const seed = createSeed(input);
-  const rand = seededRandom(seed);
-
-  let result = "";
-
-  if(game === "lotto535"){
-    const main = generateUnique(rand, 5, 35);
-    const sp = generateSpecial(rand, main, 35);
-    result = main.map(n=>n.toString().padStart(2,'0')).join(', ') + " ⭐ " + sp.toString().padStart(2,'0');
-
-  } else if(game === "mega"){
-    result = generateUnique(rand, 6, 45).map(n=>n.toString().padStart(2,'0')).join(', ');
-
-  } else if(game === "power"){
-    const main = generateUnique(rand, 6, 55);
-    const sp = generateSpecial(rand, main, 55);
-    result = main.map(n=>n.toString().padStart(2,'0')).join(', ') + " ⭐ " + sp.toString().padStart(2,'0');
-
-  } else if(game === "xsmb2"){
-    result = Math.floor(rand()*100).toString().padStart(2,'0');
-  }
-
-  document.getElementById("result").innerHTML =
-    "👉 " + result + "<br><small>Ngày: " + getDateString() + " | Seed: " + seed + "</small>";
-}
 </script>
 
 </body>
